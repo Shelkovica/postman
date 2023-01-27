@@ -1,0 +1,253 @@
+{
+	"info": {
+		"_postman_id": "9e5493c8-8395-4d70-a70f-8c012da09406",
+		"name": "Elastic",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "12026403"
+	},
+	"item": [
+		{
+			"name": "elastik login",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"//console.log(pm.response.headers.get(\"set-cookie\"))\r",
+							"var sid= pm.response.headers.get(\"set-cookie\").split(';')[0]\r",
+							"//console.log(sid)\r",
+							"pm.environment.set(\"cookie_elastik\", sid)"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"protocolProfileBehavior": {
+				"disabledSystemHeaders": {
+					"content-type": true
+				}
+			},
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Accept",
+						"value": "application/json",
+						"type": "text"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json;charset=UTF-8",
+						"type": "text"
+					},
+					{
+						"key": "kbn-xsrf",
+						"value": "true",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"username\": \"develop\",\r\n    \"password\": \"developovich\"\r\n}"
+				},
+				"url": {
+					"raw": "https://elk.2t.ru/api/security/v1/login",
+					"protocol": "https",
+					"host": [
+						"elk",
+						"2t",
+						"ru"
+					],
+					"path": [
+						"api",
+						"security",
+						"v1",
+						"login"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "elastik search",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"//var sid= pm.response.headers.get(\"set-cookie\").split(';')[0]\r",
+							"//pm.environment.set(\"cookie_elastik\", sid)\r",
+							"\r",
+							"//Для запуска тестов выполняем команду\r",
+							"//newman run https://api.postman.com/collections/12026403-9e5493c8-8395-4d70-a70f-8c012da09406?access_key=PMAT-01GQMG7VRHP56PD14ZHVX95CSF -r allure\r",
+							"//newman run https://api.postman.com/collections/12026403-9e5493c8-8395-4d70-a70f-8c012da09406?access_key=PMAT-01GQMG7VRHP56PD14ZHVX95CSF -r htmlextra --reporter-htmlextra\r",
+							"\r",
+							"//node_modules/.bin/newman run https://api.postman.com/collections/12026403-9e5493c8-8395-4d70-a70f-8c012da09406?access_key=PMAT-01GQMG7VRHP56PD14ZHVX95CSF -r csv\r",
+							"//allure serve\r",
+							"\r",
+							"var  moment = require('moment');\r",
+							"\r",
+							"pm.test(\"Запрос данных выполнен успешно \"+moment().format(\"YYYY-MM-DD\")+\". Период отчета: с \"+pm.environment.get(\"start\")+\" по \"+pm.environment.get(\"end\")+\". Окружение: \"+pm.environment.get(\"env\"), function () {\r",
+							"    pm.response.to.have.status(200);\r",
+							"});\r",
+							"\r",
+							"if (pm.response.code==200) {\r",
+							"var json = pm.response.json();\r",
+							"var hits = json.responses[0].hits.hits;\r",
+							"var hits_count = json.responses[0].hits.hits.length;   \r",
+							"\r",
+							" pm.test(\"Количество провернных записей: \"+hits_count, function () {\r",
+							"    pm.expect(hits_count).to.eql(json.responses[0].hits.total);\r",
+							"});\r",
+							"\r",
+							"for(i=0;i<hits_count;i++){\r",
+							"    write_off_type = hits[i]._source.write_off_type;\r",
+							"    current_remain = hits[i]._source.current_remain;\r",
+							"    carryover = hits[i]._source.carryover;\r",
+							"    auto_order_value = hits[i]._source.auto_order_value;\r",
+							"    supply_period_forecast= hits[i]._source.supply_period_forecast;\r",
+							"    bk_id = hits[i]._source.bk_id_from;\r",
+							"    product_code = hits[i]._source.product_code;\r",
+							"    today_sale_forecast = hits[i]._source.today_sale_forecast;\r",
+							"    date =  hits[i]._source[\"@timestamp\"]\r",
+							"    \r",
+							"\r",
+							"    if (write_off_type ==1) {\r",
+							"     // @allure.label.suite=autoOrder  \r",
+							"    pm.test(\"Заказ от \"+date+\", bk_id: \"+bk_id+\", product_code: \"+product_code+\". Проверка полной формулы автозаказа, write_off_type=1\", function () {\r",
+							"            pm.expect(auto_order_value).to.eql(supply_period_forecast-current_remain+carryover);    });\r",
+							"    } \r",
+							"    else {\r",
+							"            // @allure.label.suite=autoOrder   \r",
+							"            pm.test(\"Заказ от \"+date+\", bk_id:\"+bk_id+\", product_code: \"+product_code+\". Проверка частичной формулы автозаказа, write_off_type=0\", function () {\r",
+							"               pm.expect(auto_order_value).to.eql(supply_period_forecast);});\r",
+							"\r",
+							"            //@allure.label.test=parameterOrder \r",
+							"            pm.test(\"Заказ от \"+date+\", bk_id:\"+bk_id+\", product_code: \"+product_code+\". Проверка current_remain = 0\", function () {\r",
+							"                pm.expect(current_remain).to.eql(0);})\r",
+							"\r",
+							"            //@allure.label.test=parameterOrder\r",
+							"            pm.test(\"Заказ от \"+date+\", bk_id:\"+bk_id+\", product_code: \"+product_code+\". Проверка carryover = 0\", function () {\r",
+							"                pm.expect(carryover).to.eql(0);})\r",
+							"            //@allure.label.test=parameterOrder\r",
+							"            pm.test(\"Заказ от \"+date+\", bk_id:\"+bk_id+\", product_code: \"+product_code+\". Проверка supply_period_forecast = today_sale_forecast\", function () {\r",
+							"                pm.expect(supply_period_forecast).to.eql(today_sale_forecast);})\r",
+							"\r",
+							"\r",
+							"    }\r",
+							"\r",
+							"\r",
+							"}\r",
+							"\r",
+							"}\r",
+							"\r",
+							"\r",
+							"\r",
+							"\r",
+							""
+						],
+						"type": "text/javascript"
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"\r",
+							"var  moment = require('moment');\r",
+							"var end= moment().format(\"YYYY-MM-DD\")\r",
+							"var start = moment().add('days', -2).format(\"YYYY-MM-DD\")\r",
+							"\r",
+							"console.log(start);\r",
+							"console.log(end);\r",
+							"\r",
+							"pm.environment.set(\"env\",\"x500-dev-rabbitlogs-*\")\r",
+							"//pm.environment.set(\"env\",\"x500-prod-rabbitlogs-*\")\r",
+							"pm.environment.set(\"start\",start+\"T00:00:00.000Z\")\r",
+							"pm.environment.set(\"end\",end+\"T00:00:00.000Z\")\r",
+							"pm.environment.set(\"body_request_1\", '{\"index\":\"'+pm.environment.get(\"env\")+'\",\"ignore_unavailable\":true}')\r",
+							"pm.environment.set(\"body_request_2\", '{\"version\":true,\"size\":10000,\"sort\":[{\"@timestamp\":{\"order\":\"desc\",\"unmapped_type\":\"boolean\"}}],\"_source\":{\"excludes\":[]},\"aggs\":{\"2\":{\"date_histogram\":{\"field\":\"@timestamp\",\"calendar_interval\":\"1h\",\"time_zone\":\"Asia/Baku\",\"min_doc_count\":1}}},\"stored_fields\":[\"*\"],\"script_fields\":{},\"docvalue_fields\":[{\"field\":\"@timestamp\",\"format\":\"date_time\"},{\"field\":\"log_datetime\",\"format\":\"date_time\"}],\"query\":{\"bool\":{\"must\":[{\"range\":{\"@timestamp\":{\"format\":\"strict_date_optional_time\",\"gte\":\"'+pm.environment.get(\"start\")+'\",\"lte\":\"'+pm.environment.get(\"end\")+'\"}}}],\"filter\":[{\"bool\":{\"should\":[{\"match_phrase\":{\"topic\":\"auto_orders_log\"}}],\"minimum_should_match\":1}}],\"should\":[],\"must_not\":[]}},\"highlight\":{\"pre_tags\":[\"@kibana-highlighted-field@\"],\"post_tags\":[\"@/kibana-highlighted-field@\"],\"fields\":{\"*\":{}},\"fragment_size\":2147483647},\"timeout\":\"30000ms\"}\\n')"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"protocolProfileBehavior": {
+				"disabledSystemHeaders": {
+					"accept": true,
+					"content-type": true
+				}
+			},
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Accept",
+						"value": "application/json, text/plain, */*",
+						"type": "text"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/x-ndjson",
+						"type": "text"
+					},
+					{
+						"key": "kbn-xsrf",
+						"value": "true",
+						"type": "text"
+					},
+					{
+						"key": "kbn-version",
+						"value": "7.3.1",
+						"type": "text"
+					},
+					{
+						"key": "Cookie",
+						"value": "{{cookie_elastik}}",
+						"type": "text",
+						"disabled": true
+					},
+					{
+						"key": "sid",
+						"value": "Fe26.2**81a9f8c698f284818c73885c4f6d53992794dc690c859716ada1d7544da9ce9d*q9uJ9wb5cw6weAb5hjWXFQ*lggZk_cZNi0lT1hLU-mvVArvUTCBbaIjsLG522UifNm_xdbTDCaF-Dwzsvqk3r9n3v4ODMN9hcIMueFKGwc80TiJwugIzlrxx6Ac0oup8Njnk9mnwyrhjb9_0dIMO9TAbeqUSf40BO-hABW2jHszlQ**7e7cc4f88b9333072a968ec65f04cc68cf6b7f968d51caf5cd081aa1a44a9c8d*QBH2W2aBPuGPAeQpSpxMUXnWo79BiDIAskgpEDUuVOQ",
+						"type": "text",
+						"disabled": true
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{{body_request_1}}\r\n{{body_request_2}}",
+					"options": {
+						"raw": {
+							"language": "text"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://elk.2t.ru/elasticsearch/_msearch?rest_total_hits_as_int=true&ignore_throttled=true",
+					"protocol": "https",
+					"host": [
+						"elk",
+						"2t",
+						"ru"
+					],
+					"path": [
+						"elasticsearch",
+						"_msearch"
+					],
+					"query": [
+						{
+							"key": "rest_total_hits_as_int",
+							"value": "true"
+						},
+						{
+							"key": "ignore_throttled",
+							"value": "true"
+						}
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
